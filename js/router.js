@@ -1,98 +1,121 @@
 /* ============================
-   SIMPLE SPA ROUTER
+   SIMPLE SPA ROUTER (Upgraded)
    ============================ */
 
 const app = document.getElementById("app");
 
-// Cache for loaded components
+// Cache for loaded HTML components
 const componentCache = {};
+// Cache for loaded JS modules (cutoffs.js, pyqs.js etc.)
+const scriptCache = {};
 
-// Load component HTML from /components/
-async function loadComponent(name) {
+// Load component HTML
+async function loadComponentHTML(name) {
   if (componentCache[name]) return componentCache[name];
 
   const res = await fetch(`components/${name}.html`);
+  if (!res.ok) {
+    console.error(`❌ Failed to load component: ${name}.html`);
+    return `<p>Failed to load ${name}.html</p>`;
+  }
+
   const html = await res.text();
   componentCache[name] = html;
   return html;
 }
 
-// Show a page
+// Load component JS (if exists)
+async function loadComponentJS(name) {
+  if (scriptCache[name]) return; // Already loaded
+
+  try {
+    const module = await import(`./components/${name}.js`);
+    scriptCache[name] = module;
+
+    // If component exposes init() — call it
+    if (module.init) module.init();
+    if (module.initCutoffs) module.initCutoffs(); // For cutoffs.js
+    if (module.initPYQs) module.initPYQs();       // For pyqs.js
+  } catch (err) {
+    // No JS file — ignore silently
+    console.warn(`⚠️ No JS for component: ${name}.js`);
+  }
+}
+
+// Main page loader
 async function showPage(page) {
-  const html = await loadComponent(page);
+  const html = await loadComponentHTML(page);
 
-  // Fade out current
+  // Fade out old page
   app.classList.add("fade-out");
-  await new Promise((r) => setTimeout(r, 150));
+  await new Promise((res) => setTimeout(res, 150));
 
-  // Replace HTML
+  // Insert new HTML
   app.innerHTML = html;
 
-  // Fade in new
+  // Fade in new page
   app.classList.remove("fade-out");
   app.classList.add("fade-in");
 
-  // Highlight active tab
+  // Update navbar highlight
   updateActiveTab(page);
 
-  // Close mobile menu if open
+  // Close mobile menu
   closeMobileMenu();
 
   // Scroll to top
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  window.scrollTo({ top: 0 });
+
+  // Load JS for this page
+  await loadComponentJS(page);
 }
 
-// Update navbar highlight
+// Highlight active nav tab
 function updateActiveTab(current) {
-  document
-    .querySelectorAll("[data-tab]")
-    .forEach((btn) => btn.classList.remove("tab-active"));
+  document.querySelectorAll("[data-tab]").forEach((btn) => {
+    btn.classList.remove("tab-active");
+  });
 
-  const activeBtn = document.querySelector(`[data-tab="${current}"]`);
-  if (activeBtn) activeBtn.classList.add("tab-active");
+  const active = document.querySelector(`[data-tab="${current}"]`);
+  if (active) active.classList.add("tab-active");
 }
 
-// Mobile menu close
+// Close mobile menu
 function closeMobileMenu() {
   const menu = document.getElementById("mobile-menu");
-  if (!menu) return;
-  menu.classList.add("hidden");
-  menu.classList.remove("open");
+  if (menu) {
+    menu.classList.add("hidden");
+    menu.classList.remove("open");
+  }
 }
 
-// Setup tab click listeners
+// Setup nav button listeners
 function initTabEvents() {
   document.querySelectorAll("[data-tab]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const page = btn.dataset.tab;
-      location.hash = page; // also updates router
-    });
+    btn.onclick = () => {
+      location.hash = btn.dataset.tab;
+    };
   });
 }
 
-// Mobile menu
+// Mobile menu toggle
 function initMobileMenu() {
   const btn = document.getElementById("menu-btn");
   const menu = document.getElementById("mobile-menu");
 
   if (!btn || !menu) return;
 
-  btn.addEventListener("click", () => {
-    const hidden = menu.classList.contains("hidden");
-    if (hidden) {
-      menu.classList.remove("hidden");
-      menu.classList.add("open");
-    } else {
-      menu.classList.add("hidden");
-      menu.classList.remove("open");
-    }
-  });
+  btn.onclick = () => {
+    const hide = menu.classList.contains("hidden");
+    menu.classList.toggle("hidden", !hide);
+    menu.classList.toggle("open", hide);
+  };
 }
 
-// Router logic (listens to URL hash)
+// Router listener
 window.addEventListener("hashchange", () => {
-  const page = location.hash.replace("#", "") || "home";
-  showPage(page);
+  const pg = location.hash.replace("#", "") || "home";
+  showPage(pg);
 });
 
 // Initial load
@@ -101,6 +124,5 @@ window.addEventListener("load", () => {
   showPage(initial);
 
   initTabEvents();
-  initDropdown();
   initMobileMenu();
 });
