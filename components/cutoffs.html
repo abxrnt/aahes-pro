@@ -1,48 +1,86 @@
-<!-- ========== CUTOFFS COMPONENT (NO HEAD/BODY) ========= -->
+<!DOCTYPE html>
+<html lang="en">
 
-<section id="cutoffsPage" class="py-10 fade-in">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AAHES – CEE Cutoffs</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body {
+      background: #f6fffa;
+      font-family: Inter, sans-serif;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .fade {
+      animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+
+<body class="p-6">
+
   <div class="max-w-5xl mx-auto">
 
-    <!-- Title -->
-    <h2 class="text-4xl font-bold text-emerald-800 text-center mb-2">
+    <h1 class="text-4xl font-bold text-green-700 text-center mb-2">
       CEE Cutoff Ranks & Marks
-    </h2>
+    </h1>
 
     <p class="text-gray-600 text-center mb-10">
-      Official historical cutoffs collected from verified sources.  
-      Select college, branch & category to view accurate results.
+      Live cutoff data fetched from Firestore — college, branch and category filters.
     </p>
 
-    <!-- Filter Box -->
-    <form id="cutoffFilter"
-      class="grid gap-6 md:grid-cols-4 bg-white/80 backdrop-blur-md p-6 border border-emerald-200 shadow-lg rounded-2xl">
+    <!-- FILTER BOX -->
+    <form id="filterForm"
+      class="glass rounded-2xl shadow-lg p-6 grid md:grid-cols-4 gap-4 mb-10">
 
       <!-- College -->
       <div>
-        <label class="font-semibold text-gray-800 mb-1 block">College</label>
-        <select id="collegeSel"
-          class="p-3 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-400">
+        <label class="font-semibold text-gray-700 mb-1 block">College</label>
+        <select id="collegeSelect"
+          class="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 outline-none">
           <option value="">Loading...</option>
         </select>
       </div>
 
       <!-- Branch -->
       <div>
-        <label class="font-semibold text-gray-800 mb-1 block">Branch</label>
-        <select id="branchSel"
-          class="p-3 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-400">
+        <label class="font-semibold text-gray-700 mb-1 block">Branch</label>
+        <select id="branchSelect"
+          class="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 outline-none">
           <option value="">Select College First</option>
         </select>
       </div>
 
       <!-- Category -->
       <div>
-        <label class="font-semibold text-gray-800 mb-1 block">Category</label>
-        <select id="catSel"
-          class="p-3 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-400">
+        <label class="font-semibold text-gray-700 mb-1 block">Category</label>
+        <select id="catSelect"
+          class="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 outline-none">
           <option value="">Select Category</option>
           <option value="GEN">GEN</option>
-          <option value="OBC">OBC</option>
+          <option value="OBC">OBC / MOBC</option>
           <option value="SC">SC</option>
           <option value="STP">STP</option>
           <option value="STH">STH</option>
@@ -51,8 +89,8 @@
 
       <!-- Submit -->
       <div class="flex items-end">
-        <button
-          class="bg-emerald-600 text-white font-semibold px-6 py-3 w-full rounded-lg hover:bg-emerald-700 hover:scale-[1.02] transition">
+        <button type="submit"
+          class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg py-3 transition">
           Submit
         </button>
       </div>
@@ -60,136 +98,137 @@
     </form>
 
     <!-- Results -->
-    <div id="cutoffResults" class="grid md:grid-cols-3 gap-6 mt-12"></div>
+    <div id="results" class="grid md:grid-cols-3 gap-6"></div>
 
   </div>
-</section>
 
+  <!-- FIREBASE + LOGIC -->
+  <script type="module">
+    /* ---------------- FIREBASE SETUP ---------------- */
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-<!-- ========== FIRESTORE + LOGIC ========== -->
-<script type="module">
+    const firebaseConfig = {
+      apiKey: "AIzaSyBOVl1hdmprJXpgdN_sNTO3FsNePD_zNZY",
+      authDomain: "aahes-cee-cutoffs.firebaseapp.com",
+      projectId: "aahes-cee-cutoffs",
+      storageBucket: "aahes-cee-cutoffs.firebasestorage.app",
+      messagingSenderId: "706066626405",
+      appId: "1:706066626405:web:0d254ab82beb288108938c",
+    };
 
-  /* ---------------- FIREBASE INIT ---------------- */
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import {
-    getFirestore,
-    collection,
-    getDocs,
-  } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyBOVl1hdmprJXpgdN_sNTO3FsNePD_zNZY",
-    authDomain: "aahes-cee-cutoffs.firebaseapp.com",
-    projectId: "aahes-cee-cutoffs",
-    storageBucket: "aahes-cee-cutoffs.firebasestorage.app",
-    messagingSenderId: "706066626405",
-    appId: "1:706066626405:web:0d254ab82beb288108938c",
-  };
+    let CUTOFFS = [];
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    /* ---------------- LOAD DATA FROM FIRESTORE ---------------- */
+    async function loadCutoffs() {
+      const snap = await getDocs(collection(db, "cutoffs"));
+      CUTOFFS = snap.docs.map(d => d.data());
 
-  /* -------------- STATE -------------- */
-  let cutoffData = [];
+      console.log("Loaded:", CUTOFFS);
 
-  const collegeSel = document.getElementById("collegeSel");
-  const branchSel = document.getElementById("branchSel");
-  const catSel = document.getElementById("catSel");
-  const cutoffResults = document.getElementById("cutoffResults");
-  const cutoffFilter = document.getElementById("cutoffFilter");
-
-  /* -------------- LOAD FIRESTORE DATA -------------- */
-  async function loadCutoffs() {
-    const snap = await getDocs(collection(db, "cutoffs"));
-    cutoffData = snap.docs.map(d => d.data());
-
-    // populate college dropdown
-    const colleges = [...new Set(cutoffData.map(item => item.college))].sort();
-
-    collegeSel.innerHTML = `<option value="">Select College</option>`;
-    colleges.forEach(c => {
-      collegeSel.innerHTML += `<option value="${c}">${c}</option>`;
-    });
-  }
-
-  await loadCutoffs();
-
-  /* -------------- LOAD BRANCHES WHEN COLLEGE CHANGES -------------- */
-  collegeSel.addEventListener("change", () => {
-    const selected = collegeSel.value;
-    branchSel.innerHTML = `<option value="">Select Branch</option>`;
-    if (!selected) return;
-
-    const branches = [
-      ...new Set(
-        cutoffData.filter(item => item.college === selected).map(item => item.branch)
-      )
-    ].sort();
-
-    branches.forEach(b => {
-      branchSel.innerHTML += `<option value="${b}">${b}</option>`;
-    });
-  });
-
-  /* -------------- SUBMIT FILTER -------------- */
-  cutoffFilter.addEventListener("submit", e => {
-    e.preventDefault();
-
-    const college = collegeSel.value;
-    const branch = branchSel.value;
-    const cat = catSel.value;
-
-    if (!college || !branch || !cat) {
-      cutoffResults.innerHTML = `
-        <p class="text-red-500 col-span-3 text-center font-semibold">
-          ⚠️ Please fill all fields.
-        </p>`;
-      return;
+      populateCollegeDropdown();
     }
 
-    const matches = cutoffData.filter(
-      d => d.college === college && d.branch === branch && d.cat === cat
-    );
+    await loadCutoffs();
 
-    if (!matches.length) {
-      cutoffResults.innerHTML = `
-        <p class="text-gray-500 col-span-3 text-center">
-          No data found for <b>${college}</b> — <b>${branch}</b> (${cat})
-        </p>`;
-      return;
+    /* ---------------- POPULATE COLLEGES ---------------- */
+    const collegeSelect = document.getElementById("collegeSelect");
+    const branchSelect = document.getElementById("branchSelect");
+    const catSelect = document.getElementById("catSelect");
+    const results = document.getElementById("results");
+
+    function populateCollegeDropdown() {
+      const colleges = [...new Set(CUTOFFS.map(d => d.college))].sort();
+      collegeSelect.innerHTML = `<option value="">Select College</option>`;
+      colleges.forEach(c => {
+        collegeSelect.innerHTML += `<option value="${c}">${c}</option>`;
+      });
     }
 
-    // sort by round
-    matches.sort((a, b) => Number(a.round) - Number(b.round));
+    /* ---------------- LOAD BRANCHES WHEN COLLEGE CHANGES ---------------- */
+    collegeSelect.addEventListener("change", () => {
+      const selected = collegeSelect.value;
+      branchSelect.innerHTML = `<option value="">Select Branch</option>`;
 
-    cutoffResults.innerHTML = matches
-      .map(item => {
-        return `
-        <div class="glass p-6 border border-emerald-100 rounded-2xl shadow">
-          <div class="flex justify-between items-start">
-            <div>
-              <p class="text-sm text-gray-500">Round ${item.round}</p>
-              <h3 class="text-xl font-bold text-emerald-700">
-                ${item.college} — ${item.branch}
-              </h3>
-              <p class="text-sm mt-1 text-gray-600">
-                Category: <b>${item.cat}</b>
-              </p>
+      if (!selected) return;
+
+      const branches = [...new Set(
+        CUTOFFS.filter(d => d.college === selected).map(d => d.branch)
+      )].sort();
+
+      branches.forEach(b => {
+        branchSelect.innerHTML += `<option value="${b}">${b}</option>`;
+      });
+    });
+
+    /* ---------------- FILTER & SHOW RESULTS ---------------- */
+    document.getElementById("filterForm").addEventListener("submit", e => {
+      e.preventDefault();
+
+      const college = collegeSelect.value;
+      const branch = branchSelect.value;
+      const cat = catSelect.value;
+
+      if (!college || !branch || !cat) {
+        results.innerHTML =
+          `<p class="text-center text-red-600 col-span-3 text-lg font-semibold">Please fill all fields.</p>`;
+        return;
+      }
+
+      const filtered = CUTOFFS.filter(d =>
+        d.college === college &&
+        d.branch === branch &&
+        d.cat === cat
+      );
+
+      if (!filtered.length) {
+        results.innerHTML =
+          `<p class="text-gray-600 text-center col-span-3">No results found.</p>`;
+        return;
+      }
+
+      renderResults(filtered);
+    });
+
+    /* ---------------- RENDER RESULTS ---------------- */
+    function renderResults(list) {
+      results.innerHTML = "";
+
+      // Sort rounds numerically
+      list.sort((a, b) => Number(a.round) - Number(b.round));
+
+      list.forEach(item => {
+        results.innerHTML += `
+          <div class="glass rounded-2xl p-5 shadow fade">
+            <h3 class="text-xl font-bold text-green-700 mb-1">
+              Round ${item.round}
+            </h3>
+
+            <p class="text-gray-700"><strong>College:</strong> ${item.college}</p>
+            <p class="text-gray-700"><strong>Branch:</strong> ${item.branch}</p>
+            <p class="text-gray-700"><strong>Category:</strong> ${item.cat}</p>
+
+            <div class="mt-4">
+              <p class="text-sm text-gray-500">Closing Rank</p>
+              <p class="text-3xl font-bold text-green-800">${item.close ?? "—"}</p>
             </div>
 
-            <div class="text-right">
-              <p class="text-xs text-gray-500">Closing Rank</p>
-              <p class="text-3xl font-extrabold text-emerald-700">
-                ${item.close}
-              </p>
-              <p class="text-sm text-gray-700 mt-1">
-                Marks: <b>${item.marks}</b>
-              </p>
-            </div>
+            <p class="mt-2 text-gray-700">
+              Marks: <strong>${item.marks ?? "—"}</strong>
+            </p>
           </div>
-        </div>`;
-      })
-      .join("");
-  });
+        `;
+      });
+    }
 
-</script>
+  </script>
+</body>
+
+</html>
