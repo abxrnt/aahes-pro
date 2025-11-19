@@ -120,3 +120,58 @@
   </div>
 
 </section>
+
+
+
+<!-- FIREBASE Contact Form Script -->
+<script type="module">
+  // FIREBASE IMPORTS
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { 
+    getFirestore, collection, addDoc, serverTimestamp 
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // FIREBASE CONFIG
+  const firebaseConfig = {
+    apiKey: "YOUR_KEY",
+    authDomain: "YOUR_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_BUCKET",
+    messagingSenderId: "YOUR_SENDER",
+    appId: "YOUR_APPID"
+  };
+
+  // INIT
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // FORM SUBMIT HANDLER
+  const form = document.querySelector("form");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    // GET FIELD VALUES
+    const name = document.getElementById("nameInput").value.trim();
+    const email = document.getElementById("emailInput").value.trim();
+    const phn = document.getElementById("phoneInput").value.trim();
+    const msg = document.getElementById("msgInput").value.trim();
+
+    try {
+      await addDoc(collection(db, "noti"), {
+        name,
+        email,
+        phn,
+        msg,
+        time: serverTimestamp(),
+      });
+
+      alert("Message Sent!");
+      form.reset();
+    } 
+    catch (err) {
+      console.error(err);
+      alert("Something went wrong.");
+    }
+  });
+</script>
