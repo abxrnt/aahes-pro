@@ -1,28 +1,29 @@
 <!-- GOOGLE FONT -->
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
 
-<section id="contact" class="max-w-6xl mx-auto px-4 py-2">
+<section id="contact-page" class="max-w-6xl mx-auto px-4 py-8">
 
   <!-- PAGE HEADING -->
-  <h2 class="text-center text-4xl font-extrabold italic 
-             font-['Playfair Display']
-             bg-gradient-to-r from-orange-500 via-red-500 to-pink-600 
-             bg-clip-text text-transparent mb-10">
-      Contact Us
+  <h2
+    class="text-center text-4xl font-extrabold italic 
+           font-['Playfair Display']
+           bg-gradient-to-r from-orange-500 via-red-500 to-pink-600 
+           bg-clip-text text-transparent mb-10">
+    Contact Us
   </h2>
 
-  <!-- 2 COLUMN LLAYOUT -->
+  <!-- GRID -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
 
-    <!-- LEFT SIDE — CONTACT INFO -->
+    <!-- LEFT : CONTACT INFO -->
     <div class="space-y-5">
 
       <h3 class="text-2xl font-semibold bg-gradient-to-r from-pink-500 to-violet-700 bg-clip-text text-transparent">
         Get In Touch
       </h3>
 
-      <p class="text-gray-700 text-sm leading-relaxed">
-        Feel free to reach out to us through any of the contact details below.
+      <p class="text-gray-700 text-sm">
+        Feel free to reach out to us through any of the details below.
       </p>
 
       <div class="space-y-3 text-sm">
@@ -38,33 +39,33 @@
         </div>
 
         <div>
-          <h4 class="font-bold text-gray-800">📍 Office Address</h4>
+          <h4 class="font-bold text-gray-800">📍 Office</h4>
           <p class="text-gray-700">Guwahati, Assam, India</p>
         </div>
 
         <div>
           <h4 class="font-bold text-gray-800">🔗 LinkedIn</h4>
-          <a href="#" class="text-pink-600 hover:underline text-sm">linkedin.com/company/aahes</a>
+          <a href="#" class="text-pink-600 hover:underline">linkedin.com/company/aahes</a>
         </div>
 
         <div>
           <h4 class="font-bold text-gray-800">🌐 Website</h4>
-          <a href="#" class="text-pink-600 hover:underline text-sm">www.aahes.com</a>
+          <a href="#" class="text-pink-600 hover:underline">www.aahes.com</a>
         </div>
 
       </div>
-
     </div>
 
-    <!-- RIGHT SIDE — CONTACT FORM -->
+    <!-- RIGHT : CONTACT FORM -->
     <div class="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
 
-      <form class="space-y-4">
+      <form id="contactForm" class="space-y-4">
 
         <!-- Name -->
         <div>
           <label class="block text-xs font-semibold text-gray-800 mb-1">Name</label>
-          <input 
+          <input
+            id="nameInput"
             type="text"
             class="w-full p-2 border rounded-md text-sm focus:ring-2 focus:ring-pink-500"
             placeholder="Your name"
@@ -75,7 +76,8 @@
         <!-- Email -->
         <div>
           <label class="block text-xs font-semibold text-gray-800 mb-1">Email</label>
-          <input 
+          <input
+            id="emailInput"
             type="email"
             class="w-full p-2 border rounded-md text-sm focus:ring-2 focus:ring-pink-500"
             placeholder="Your email"
@@ -83,10 +85,11 @@
           />
         </div>
 
-        <!-- Phone Number (NEW) -->
+        <!-- Phone -->
         <div>
           <label class="block text-xs font-semibold text-gray-800 mb-1">Phone Number</label>
-          <input 
+          <input
+            id="phoneInput"
             type="tel"
             class="w-full p-2 border rounded-md text-sm focus:ring-2 focus:ring-pink-500"
             placeholder="Your phone number"
@@ -97,15 +100,17 @@
         <!-- Message -->
         <div>
           <label class="block text-xs font-semibold text-gray-800 mb-1">Message</label>
-          <textarea 
+          <textarea
+            id="msgInput"
             rows="3"
             class="w-full p-2 border rounded-md text-sm focus:ring-2 focus:ring-pink-500"
-            placeholder="Type here..."
-            required></textarea>
+            placeholder="Type your message..."
+            required
+          ></textarea>
         </div>
 
-        <!-- Submit Button -->
-        <button 
+        <!-- Submit -->
+        <button
           type="submit"
           class="w-full py-2 rounded-md text-white text-sm font-semibold
                  bg-gradient-to-r from-orange-500 via-red-500 to-pink-600 
@@ -114,64 +119,49 @@
         </button>
 
       </form>
-
     </div>
 
   </div>
-
 </section>
 
 
-
-<!-- FIREBASE Contact Form Script -->
+<!-- FIREBASE HANDLER -->
 <script type="module">
-  // FIREBASE IMPORTS
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { 
-    getFirestore, collection, addDoc, serverTimestamp 
-  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } 
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  // FIREBASE CONFIG
   const firebaseConfig = {
     apiKey: "YOUR_KEY",
     authDomain: "YOUR_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
+    projectId: "YOUR_PROJECT",
     storageBucket: "YOUR_BUCKET",
     messagingSenderId: "YOUR_SENDER",
-    appId: "YOUR_APPID"
+    appId: "YOUR_APP"
   };
 
-  // INIT
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // FORM SUBMIT HANDLER
-  const form = document.querySelector("form");
-
-  form.addEventListener("submit", async (e) => {
+  // FORM LISTENER
+  document.addEventListener("submit", async (e) => {
+    if (e.target.id !== "contactForm") return;
     e.preventDefault();
 
-    // GET FIELD VALUES
     const name = document.getElementById("nameInput").value.trim();
     const email = document.getElementById("emailInput").value.trim();
     const phn = document.getElementById("phoneInput").value.trim();
     const msg = document.getElementById("msgInput").value.trim();
 
-    try {
-      await addDoc(collection(db, "noti"), {
-        name,
-        email,
-        phn,
-        msg,
-        time: serverTimestamp(),
-      });
+    await addDoc(collection(db, "noti"), {
+      name,
+      email,
+      phn,
+      msg,
+      time: serverTimestamp()
+    });
 
-      alert("Message Sent!");
-      form.reset();
-    } 
-    catch (err) {
-      console.error(err);
-      alert("Something went wrong.");
-    }
+    alert("Message sent!");
+    e.target.reset();
   });
 </script>
