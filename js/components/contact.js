@@ -1,6 +1,9 @@
+// This file runs only when contact.html is loaded
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp } 
-  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { 
+  getFirestore, collection, addDoc, serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBOVl1hdmprJXpgdN_sNTO3FsNePD_zNZY",
@@ -15,25 +18,22 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Wait for content to load (important for components)
+// Wait until router injects the HTML
 document.addEventListener("DOMContentLoaded", () => {
-  
+
   const form = document.getElementById("contactForm");
-  if (!form) return; // safety check
+  if (!form) return;
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const name = nameInput.value.trim();
-    const email = emailInput.value.trim();
-    const phn = phoneInput.value.trim();
-    const msg = msgInput.value.trim();
+    const name = nameInput.value;
+    const email = emailInput.value;
+    const phn = phoneInput.value;
+    const msg = msgInput.value;
 
     await addDoc(collection(db, "noti"), {
-      name,
-      email,
-      phn,
-      msg,
+      name, email, phn, msg,
       time: serverTimestamp()
     });
 
