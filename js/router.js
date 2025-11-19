@@ -1,22 +1,24 @@
 /* ============================
-   SIMPLE SPA ROUTER (Upgraded)
+   ADVANCED SPA ROUTER (Final)
    ============================ */
 
 const app = document.getElementById("app");
 
-// Cache for loaded HTML components
+// HTML cache
 const componentCache = {};
-// Cache for loaded JS modules (cutoffs.js, pyqs.js etc.)
+// JS Module cache
 const scriptCache = {};
 
-// Load component HTML
+// Load HTML
 async function loadComponentHTML(name) {
   if (componentCache[name]) return componentCache[name];
 
   const res = await fetch(`components/${name}.html`);
   if (!res.ok) {
     console.error(`❌ Failed to load component: ${name}.html`);
-    return `<p>Failed to load ${name}.html</p>`;
+    return `<p class='text-red-600 text-center py-10'>
+              Failed to load ${name}.html
+            </p>`;
   }
 
   const html = await res.text();
@@ -24,58 +26,61 @@ async function loadComponentHTML(name) {
   return html;
 }
 
-// Load component JS (if exists)
+// Load JS file if exists
 async function loadComponentJS(name) {
-  if (scriptCache[name]) return; // Already loaded
+  if (scriptCache[name]) return; // Already imported
+
+  const jsPath = `./js/components/${name}.js`;
 
   try {
-    const module = await import(`./components/${name}.js`);
+    const module = await import(jsPath);
     scriptCache[name] = module;
 
-    // If component exposes init() — call it
+    // 1) If module.init() exists → run it
     if (module.init) module.init();
-    if (module.initCutoffs) module.initCutoffs(); // For cutoffs.js
-    if (module.initPYQs) module.initPYQs();       // For pyqs.js
+
+    // 2) If module exports a function with same name (contactInit, pyqsInit)
+    const autoFn = module[`${name}Init`];
+    if (autoFn) autoFn();
+
+    // 3) If multiple exported functions
+    Object.values(module).forEach((fn) => {
+      if (typeof fn === "function" && fn.autoRun) fn();
+    });
+
   } catch (err) {
-    // No JS file — ignore silently
-    console.warn(`⚠️ No JS for component: ${name}.js`);
+    console.warn(`⚠️ No JS file found: ${jsPath}`);
   }
 }
 
-// Main page loader
+// Render page
 async function showPage(page) {
   const html = await loadComponentHTML(page);
 
-  // Fade out old page
+  // Fade out previous page
   app.classList.add("fade-out");
   await new Promise((res) => setTimeout(res, 150));
 
-  // Insert new HTML
+  // Insert new page
   app.innerHTML = html;
 
   // Fade in new page
   app.classList.remove("fade-out");
   app.classList.add("fade-in");
 
-  // Update navbar highlight
   updateActiveTab(page);
-
-  // Close mobile menu
   closeMobileMenu();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 
-  // Scroll to top
-  window.scrollTo({ top: 0 });
-
-  // Load JS for this page
+  // Load JS for page
   await loadComponentJS(page);
 }
 
-// Highlight active nav tab
+// Highlight active tab
 function updateActiveTab(current) {
   document.querySelectorAll("[data-tab]").forEach((btn) => {
     btn.classList.remove("tab-active");
   });
-
   const active = document.querySelector(`[data-tab="${current}"]`);
   if (active) active.classList.add("tab-active");
 }
@@ -89,7 +94,7 @@ function closeMobileMenu() {
   }
 }
 
-// Setup nav button listeners
+// Nav click events
 function initTabEvents() {
   document.querySelectorAll("[data-tab]").forEach((btn) => {
     btn.onclick = () => {
@@ -106,19 +111,19 @@ function initMobileMenu() {
   if (!btn || !menu) return;
 
   btn.onclick = () => {
-    const hide = menu.classList.contains("hidden");
-    menu.classList.toggle("hidden", !hide);
-    menu.classList.toggle("open", hide);
+    const isHidden = menu.classList.contains("hidden");
+    menu.classList.toggle("hidden", !isHidden);
+    menu.classList.toggle("open", isHidden);
   };
 }
 
-// Router listener
+// URL hash router
 window.addEventListener("hashchange", () => {
   const pg = location.hash.replace("#", "") || "home";
   showPage(pg);
 });
 
-// Initial load
+// Initial page load
 window.addEventListener("load", () => {
   const initial = location.hash.replace("#", "") || "home";
   showPage(initial);
